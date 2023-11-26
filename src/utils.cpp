@@ -85,6 +85,8 @@ void determineFeaturesStartIndex(std::ifstream& file, size_t headersCount, size_
     }
 }
 
+
+
 // Function to load data lines from the file and construct StudentInfo objects.
 void loadDataLines(std::ifstream& file, std::vector<StudentInfo>& students, size_t headersCount, size_t featuresStartIndex) {
     std::string line;
@@ -99,7 +101,7 @@ void loadDataLines(std::ifstream& file, std::vector<StudentInfo>& students, size
 
         std::getline(lineStream, element, ',');
         if (!Utils::isNumber(element)) {
-            throw std::runtime_error("Error: Wrong index in file : " + element);
+            throw std::runtime_error("Error: Wrong index in file : " + element + " at index " + std::to_string(student.index));
         }
         student.index = static_cast<size_t>(std::stoi(element));
 
@@ -110,7 +112,7 @@ void loadDataLines(std::ifstream& file, std::vector<StudentInfo>& students, size
                 student.labels.push_back(element);
             }
             else {
-                throw std::runtime_error("Error: Wrong label in file : " + element);
+                throw std::runtime_error("Error: Wrong label in file : " + element + " at index " + std::to_string(student.index));
             }
         }
 
@@ -124,7 +126,7 @@ void loadDataLines(std::ifstream& file, std::vector<StudentInfo>& students, size
                 student.features.push_back(std::stod(element));
             }
             else {
-                throw std::runtime_error("Error: Wrong feature in file : " + element);
+                throw std::runtime_error("Error: Wrong feature in file : " + element + " at index " + std::to_string(student.index));
             }
         }
 
