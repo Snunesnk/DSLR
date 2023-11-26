@@ -7,7 +7,7 @@ CXX = g++
 CXXFLAGS = -std=c++20 -Iinc
 
 # Liste des programmes à générer
-PROGRAMS = describe histogram scatter_plot pair_plot test
+PROGRAMS = describe histogram scatter_plot pair_plot logreg_train logreg_predict
 
 # Génération des noms des fichiers objets
 OBJECTS = $(PROGRAMS:%=%.o)
