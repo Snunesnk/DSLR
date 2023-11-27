@@ -18,13 +18,18 @@ public:
 	static double Max(const std::vector<double>& data);
 
 	// Calculate and return the percentile of a dataset
-	static double Percentile(const std::vector<double>& data, int n);
+	static double Quartile(const std::vector<double>& data, int n);
 
 	// Calculate and return the covariance between two datasets
 	static double Covariance(const std::vector<double>& data1, const std::vector<double>& data2);
 
 	// Calculate and return the Pearson correlation coefficient between two datasets
 	static double PearsonCorrelation(const std::vector<double>& data1, const std::vector<double>& data2);
+
+	static double LogisticRegressionHypothesis(const std::vector<double>& weights, const std::vector<double>& inputs);
+
+	static double Accuracy(const std::vector<std::vector<double>>& inputs, const std::vector<std::vector<double>>& targets,
+		const std::vector<std::vector<double>>& weights);
 };
 
 #endif // CALCULATE_H

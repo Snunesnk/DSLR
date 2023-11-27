@@ -1,7 +1,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#pragma warning(push, 0)
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -9,8 +8,6 @@
 #include <limits>
 #include <vector>
 #include <functional>
-#pragma warning(pop)
-
 
 struct StudentInfo {
     std::vector<std::string> labels;
@@ -24,7 +21,7 @@ public:
     static bool isNumber(const std::string& str);
 
     // Load data from a file, including headers, features start index, and student information.
-    static void loadDataFile(const std::string& filename, std::vector<StudentInfo>& students, std::vector<std::string>& headers, size_t& featuresStartIndex);
+    static std::pair<std::vector<std::string>, size_t> LoadDataFile(const std::string& filename, std::vector<StudentInfo>& students);
 
     // Execute a system command and print an error message if the execution fails.
     static void executeCommand(const std::string& command);
@@ -44,6 +41,18 @@ public:
         }
         std::cout << std::endl;
     }
+
+    static void NormalizeData(std::vector<StudentInfo>& data, std::vector<double>& featureMeans, std::vector<double>& featureStdDevs);
+
+    static void SaveWeightsAndNormalizationParameters(const std::vector<std::vector<double>>& weights,
+        const std::vector<double>& featureMeans,
+        const std::vector<double>& featureStdDevs,
+        const std::string& filename);
+
+    static void LoadWeightsAndNormalizationParameters(std::vector<std::vector<double>>& weights,
+        std::vector<double>& featureMeans,
+        std::vector<double>& featureStdDevs,
+        const std::string& filename);
 };
 
 #endif // UTILS_H

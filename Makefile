@@ -21,6 +21,8 @@ all: $(PROGRAMS)
 
 # Nettoyage des fichiers objets et exécutables
 clean:
-	rm -f $(OBJECTS) $(PROGRAMS:%=%.*) 
+	rm -f $(PROGRAMS:%=%.*) 
 
+# Règle pour nettoyer et reconstruire
+re: clean all
 

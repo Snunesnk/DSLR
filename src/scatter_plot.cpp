@@ -2,64 +2,11 @@
 #include "utils.h"
 #include "calculate.h"
 
-// Function declaration
-void extensionScatterPlot(const std::vector<StudentInfo>& studentData, const size_t featuresCount, size_t feature1Index, size_t feature2Index);
-
-int main(int argc, char* argv[])
-{
-    try {
-        // Check command line arguments
-#ifndef _MSC_VER
-        if (argc != 2 && argc != 4)
-        {
-            std::cerr << "Usage: " << argv[0] << " <dataset>.csv [optional: <feature1Index> <feature2Index>]" << std::endl;
-            return 1;
-        }
-
-        // Load data from the provided dataset
-        std::vector<StudentInfo> studentData;
-        std::vector<std::string> headers;
-        size_t featuresStartIndex;
-        Utils::loadDataFile(argv[1], studentData, headers, featuresStartIndex);
-        size_t featuresCount = headers.size() - featuresStartIndex;
-
-        // Set default feature indices
-        size_t feature1Index = 2;
-        size_t feature2Index = 4;
-
-        // Check if optional feature indices are provided
-        if (argc == 4 && std::atoi(argv[2]) < featuresCount && std::atoi(argv[3]) < featuresCount)
-        {
-            feature1Index = std::atoi(argv[2]);
-            feature2Index = std::atoi(argv[3]);
-        }
-
-        // Call the function to generate scatter plot
-        extensionScatterPlot(studentData, featuresCount, feature1Index, feature2Index);
-#else
-        // If using Microsoft Visual Studio, use a default dataset and feature indices
-        std::vector<StudentInfo> studentData;
-        std::vector<std::string> headers;
-        size_t featuresStartIndex;
-        Utils::loadDataFile("dataset_train.csv", studentData, headers, featuresStartIndex);
-        size_t featuresCount = headers.size() - featuresStartIndex;
-
-        size_t feature1Index = 2;
-        size_t feature2Index = 4;
-
-        extensionScatterPlot(studentData, featuresCount, feature1Index, feature2Index);
-#endif // MVS
-    }
-    catch (const std::exception& e) {
-        // Handle exceptions and display error messages
-        std::cerr << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-}
-
 // Function definition for generating scatter plot
-void extensionScatterPlot(const std::vector<StudentInfo>& studentData, const size_t featuresCount, size_t feature1Index, size_t feature2Index)
+void extensionScatterPlot(const std::vector<StudentInfo>& studentData, const size_t featuresCount)
 {
+    const size_t feature1Index = 2, feature2Index = 4;
+
     // Python script file name
     std::string pythonScript = "scatterplot.py";
 
@@ -170,5 +117,29 @@ void extensionScatterPlot(const std::vector<StudentInfo>& studentData, const siz
     {
         std::cerr << "Error deleting the temporary Python file." << std::endl;
         return;
+    }
+}
+
+int main(int argc, char* argv[])
+{
+    try {
+        std::vector<StudentInfo> students;
+#ifndef _MSC_VER
+
+        if (argc != 2)
+        {
+            std::cerr << "Usage: " << argv[0] << " <dataset>.csv" << std::endl;
+            return 1;
+        }
+        Utils::LoadDataFile(argv[1], students);
+#else       
+        Utils::LoadDataFile("dataset_train.csv", students);
+#endif // MVS
+        extensionScatterPlot(students, students[0].features.size());
+    }
+    catch (const std::exception& e) {
+        // Handle exceptions and display error messages
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
     }
 }

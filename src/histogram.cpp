@@ -3,36 +3,26 @@
 
 
 // Function declaration
-void extensionHistogram(const std::vector<StudentInfo>& studentData, const std::vector<std::string>& headers, const size_t featuresCount);
+void extensionHistogram(const std::vector<StudentInfo>& students, const std::vector<std::string>& headers, const size_t featuresCount);
 
 int main(int argc, char* argv[])
 {
     try {
+        std::vector<StudentInfo> students;
 #ifndef _MSC_VER
-        // Check for the correct number of command-line arguments
+
         if (argc != 2)
         {
             std::cerr << "Usage: " << argv[0] << " <dataset>.csv" << std::endl;
             return 1;
         }
-
-        // Load data from the provided dataset
-        std::vector<StudentInfo> studentData;
-        std::vector<std::string> headers;
-        size_t featuresStartIndex;
-        Utils::loadDataFile(argv[1], studentData, headers, featuresStartIndex);
-        size_t featuresCount = headers.size() - featuresStartIndex;
-#else
-        // If using Microsoft Visual Studio, use a default dataset
-        std::vector<StudentInfo> studentData;
-        std::vector<std::string> headers;
-        size_t featuresStartIndex;
-        Utils::loadDataFile("dataset_train.csv", studentData, headers, featuresStartIndex);
-        size_t featuresCount = headers.size() - featuresStartIndex;
+        auto headers = Utils::LoadDataFile(argv[1], students).first;
+#else       
+        auto headers = Utils::LoadDataFile("dataset_train.csv", students).first;
 #endif // MVS
 
         // Call the function to generate the histogram
-        extensionHistogram(studentData, headers, featuresCount);
+        extensionHistogram(students, headers, students[0].features.size());
     }
     catch (const std::exception& e) {
         // Handle exceptions and display error messages
@@ -42,7 +32,7 @@ int main(int argc, char* argv[])
 }
 
 // Function definition for generating histogram
-void extensionHistogram(const std::vector<StudentInfo>& studentData, const std::vector<std::string>& headers, const size_t featuresCount)
+void extensionHistogram(const std::vector<StudentInfo>& students, const std::vector<std::string>& headers, const size_t featuresCount)
 {
     // Constants for indices
     const size_t labelsCount = headers.size() - featuresCount - 1;
@@ -82,7 +72,7 @@ void extensionHistogram(const std::vector<StudentInfo>& studentData, const std::
     // Fill the data structure with feature values by house
     for (size_t i = 0; i < featuresCount; i++)
     {
-        for (const auto& student : studentData)
+        for (const auto& student : students)
         {
             if (student.labels[houseIndex] == "Ravenclaw")
             {

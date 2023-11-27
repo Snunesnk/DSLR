@@ -5,31 +5,7 @@
 #include "utils.h"
 #include "calculate.h"
 
-double weightedSum(const std::vector<double>& weights, const std::vector<double>& inputs)
-{
-    const size_t elemsCount = weights.size();
-    double weightedSum = 0;
-
-    for (size_t i = 0; i < elemsCount; ++i) {
-        weightedSum += weights[i] * inputs[i];
-    }
-    return weightedSum;
-}
-
-double sigmoid(double x)
-{
-    return 1.0 / (1.0 + exp(-x));
-}
-
-double activationFunction(const std::vector<double>& weights, const std::vector<double>& inputs)
-{
-    return sigmoid(weightedSum(weights, inputs));
-}
-
-double prediction(const std::vector<double>& weights, const std::vector<double>& inputs)
-{
-    return activationFunction(weights, inputs);
-}
+#include <random>
 
 double lossFunction(const std::vector<std::vector<double>>& inputs, const std::vector<std::vector<double>>& weights,
     const std::vector<std::vector<double>>& target, const size_t house)
@@ -39,7 +15,7 @@ double lossFunction(const std::vector<std::vector<double>>& inputs, const std::v
 
     for (size_t i = 0; i < size; ++i)
     {
-        double proba = prediction(weights[house], inputs[i]);
+        double proba = Calculate::LogisticRegressionHypothesis(weights[house], inputs[i]);
         loss += target[i][house] * std::log(proba + 1e-15) +
             (1.0 - target[i][house]) * std::log(1.0 - proba + 1e-15);
     }
@@ -54,7 +30,7 @@ double lossFunctionPartialDerivative(const std::vector<std::vector<double>>& inp
 
     for (size_t i = 0; i < size; i++)
     {
-        double proba = prediction(weights[house], inputs[i]);
+        double proba = Calculate::LogisticRegressionHypothesis(weights[house], inputs[i]);
         derivative += (proba - target[i][house]) * inputs[i][j];
     }
     return (1.0 / size) * derivative;
@@ -66,54 +42,31 @@ void gradientDescent(const std::vector<std::vector<double>>& inputs, std::vector
     const double learningRate = 0.1;
     const size_t size = weights[0].size();
 
+    std::vector<std::vector<double>> tmp_weights = weights;
+    tmp_weights[house][0] = weights[house][0];
+
     for (size_t j = 0; j < size; j++)
     {       
         double derivative = lossFunctionPartialDerivative(inputs, weights, target, house, j);
-        // Mise à jour du poids
-        weights[house][j] = weights[house][j] - learningRate * derivative;
-    }
-}
-
-// La fonction de prédiction, poids et autres fonctions nécessaires doivent être définies ailleurs dans votre code.
-double calculateAccuracy(const std::vector<std::vector<double>>& inputs, const std::vector<std::vector<double>>& targets,
-    const std::vector<std::vector<double>>& weights)
-{
-    const size_t dataSize = inputs.size();
-    double correctPredictions = 0;
-
-    for (size_t i = 0; i < dataSize; ++i)
-    {
-        double maxProbability = 0;
-        size_t predictedHouse = 0;
-
-        for (size_t house = 0; house < weights.size(); ++house)
-        {
-            double probability = prediction(weights[house], inputs[i]);
-            if (probability > maxProbability)
-            {
-                maxProbability = probability;
-                predictedHouse = house;
-            }
-        }
-
-        if (targets[i][predictedHouse] == 1.0)
-        {
-            correctPredictions++;
-        }
+        
+        tmp_weights[house][j] -= learningRate * derivative;
     }
 
-    // Calculer le pourcentage de prédictions correctes
-    double accuracy = (correctPredictions / dataSize) * 100.0;
-    return accuracy;
+    // Mise à jour des poids après avoir calculé toutes les dérivées partielles
+    weights[house] = tmp_weights[house];
 }
 
-void training(std::vector<std::vector<double>>& weights, const std::vector<std::vector<double>>& inputs, const std::vector<std::vector<double>>& targets)
+void trainModels(std::vector<std::vector<double>>& weights, const std::vector<std::vector<double>>& inputs,
+    const std::vector<std::vector<double>>& targets, const size_t epochs)
 {
-    const size_t housesCount = 4;
-    // Vecteur pour stocker les probabilités de classe
-    std::vector<double> probClass(housesCount);
-    const size_t epochs = 100;
+    const size_t housesCount = weights.size();
 
+    std::cout << std::left << std::setw(std::to_string(epochs).length() + 8) << "Epochs"
+        << std::setw(10) << "Loss 1"
+        << std::setw(10) << "Loss 2"
+        << std::setw(10) << "Loss 3"
+        << std::setw(10) << "Loss 4"
+        << std::setw(10) << "Accuracy" << std::endl;
     // Entraînement du modèle
     for (size_t epoch = 0; epoch < epochs; ++epoch)
     {
@@ -122,217 +75,127 @@ void training(std::vector<std::vector<double>>& weights, const std::vector<std::
             gradientDescent(inputs, weights, targets, house);
         }
         // Calculer la perte moyenne pour chaque maison après chaque époque (facultatif)
-        std::cout << "Epoch " << epoch;
+        std::cout << "Epoch " << std::left << std::setw(std::to_string(epochs).length() + 2) << epoch + 1;
         for (size_t house = 0; house < housesCount; house++)
         {
             double loss = lossFunction(inputs, weights, targets, house);
-            std::cout << " " << loss;
+            std::cout << std::setw(10) << std::setprecision(6) << loss; 
         }
+        double accuracy = Calculate::Accuracy(inputs, targets, weights);
+        std::cout << std::setw(5) << std::fixed << std::setprecision(2) << accuracy << "%";
         std::cout << std::endl;
     }
 }
 
-void normalizeData(std::vector<StudentInfo>& data, std::vector<double>& featureMeans, std::vector<double>& featureStdDevs) {
-    // Calculer la moyenne et l'écart type des caractéristiques des données
-    size_t numFeatures = data[0].features.size();
-
-    if (featureMeans.size() + featureStdDevs.size() == 0) {
-        for (size_t i = 0; i < numFeatures; ++i) {
-            // Extraction des valeurs de la caractéristique i
-            std::vector<double> featureValues;
-            for (const StudentInfo& entry : data) {
-                featureValues.push_back(entry.features[i]);
-            }
-
-            // Calcul de la moyenne et de l'écart type en utilisant vos fonctions
-            double mean = Calculate::Mean(featureValues);
-            double stdDev = Calculate::StandardDeviation(featureValues);
-
-            featureMeans.push_back(mean);
-            featureStdDevs.push_back(stdDev);
+// Function to handle missing values by replacing NaN with feature means
+void handleMissingValues(std::vector<StudentInfo>& students)
+{
+    size_t studentCount = students.size();
+    size_t featureCount = students[0].features.size();
+    std::vector<std::vector<double>> featureValues(featureCount, std::vector<double>(students.size()));
+    for (size_t i = 0; i < featureCount; ++i)
+    {
+        for (size_t j = 0; j < studentCount; ++j)
+        {
+            featureValues[i][j] = students[j].features[i];
         }
     }
 
-    // Normalise les données
-    for (StudentInfo& entry : data) {
-        size_t numFeatures = entry.features.size();
-        for (size_t i = 0; i < numFeatures; ++i) {
-            if (featureStdDevs[i] != 0.0) {
-                entry.features[i] = (entry.features[i] - featureMeans[i]) / featureStdDevs[i];
-            }
-            else {
-                std::cerr << "Warning: Feature " << i << " has a zero standard deviation. Normalization ignored.\n";
+    for (auto& student : students)
+    {
+        for (size_t j = 0; j < featureCount; ++j)
+        {
+            if (std::isnan(student.features[j]))
+            {
+                student.features[j] = Calculate::Mean(featureValues[j]);
             }
         }
     }
 }
 
-void saveWeightsAndNormalizationParameters(const std::vector<std::vector<double>>& weights,
-    const std::vector<double>& featureMeans,
-    const std::vector<double>& featureStdDevs,
-    const std::string& filename) {
-    // Ouvrir le fichier en mode écriture
-    std::ofstream outFile(filename);
+// Function to set up data for training
+void setupTrainingData(const std::vector<StudentInfo>& students,
+    const std::vector<size_t>& selectedFeatures,
+    const std::unordered_map<size_t, std::string>& houseIndex,
+    std::vector<std::vector<double>>& weights,
+    std::vector<std::vector<double>>& trainingInputs,
+    std::vector<std::vector<double>>& trainingLabels) {
+    const size_t houseCount = houseIndex.size();
 
-    if (!outFile.is_open()) {
-        std::cerr << "Error: Unable to open the file " << filename << " for writing." << std::endl;
-        return;
-    }
+    // Initialize weights randomly
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<double> distribution(-0.5, 0.5);
 
-    // Enregistrer les caractéristiques (moyennes et écarts types)
-    outFile << "FeatureMeans:";
-    for (double mean : featureMeans) {
-        outFile << " " << mean;
-    }
-    outFile << "\n";
-
-    outFile << "FeatureStandardDeviations:";
-    for (double stdDev : featureStdDevs) {
-        outFile << " " << stdDev;
-    }
-    outFile << "\n\n";
-
-    // Enregistrer les poids
-    for (const auto& houseWeights : weights) {
-        for (double weight : houseWeights) {
-            outFile << weight << " ";
+    for (size_t i = 0; i < houseCount; ++i) {
+        for (size_t j = 0; j < selectedFeatures.size(); ++j) {
+            weights[i][j] = distribution(gen);
         }
-        outFile << "\n";
     }
 
-    // Fermer le fichier
-    outFile.close();
-}
-
-void loadWeightsAndNormalizationParameters(std::vector<std::vector<double>>& weights,
-    std::vector<double>& featureMeans,
-    std::vector<double>& featureStdDevs,
-    const std::string& filename) {
-    // Ouvrir le fichier en mode lecture
-    std::ifstream inFile(filename);
-
-    if (!inFile.is_open()) {
-        std::cerr << "Error: Unable to open the file " << filename << " for reading." << std::endl;
-        return;
-    }
-
-    std::string line;
-    // Lire les moyennes des caractéristiques
-    std::getline(inFile, line);
-    std::istringstream meanStream(line);
-    std::string meanLabel;
-    meanStream >> meanLabel; // Ignorer le label "Feature Means:"
-    double meanValue;
-    while (meanStream >> meanValue) {
-        featureMeans.push_back(meanValue);
-    }
-
-    // Lire les écarts types des caractéristiques
-    std::getline(inFile, line);
-    std::istringstream stdDevStream(line);
-    std::string stdDevLabel;
-    stdDevStream >> stdDevLabel; // Ignorer le label "Feature Standard Deviations:"
-    double stdDevValue;
-    while (stdDevStream >> stdDevValue) {
-        featureStdDevs.push_back(stdDevValue);
-    }
-
-    // Lire les poids
-    weights.clear(); // Assurez-vous de vider le vecteur avant de le remplir
-    std::getline(inFile, line);
-    while (std::getline(inFile, line)) {
-        std::istringstream weightStream(line);
-        double weight;
-        std::vector<double> houseWeights;
-        while (weightStream >> weight) {
-            houseWeights.push_back(weight);
+    // Populate training data
+    for (size_t i = 0; i < students.size(); i++) {
+        std::vector<double> selection;
+        for (auto feature : selectedFeatures) {
+            selection.push_back(students[i].features[feature - 1]);
         }
-        weights.push_back(houseWeights);
-    }
+        trainingInputs.push_back(selection);
 
-    // Fermer le fichier
-    inFile.close();
+        std::vector<double> result(houseCount, 0.0);
+        for (const auto& entry : houseIndex) {
+            if (entry.second == students[i].labels[0]) {
+                result[entry.first] = 1.0;
+                break;
+            }
+        }
+        trainingLabels.push_back(result);
+    }
 }
 
 int main() {
     try {
-        std::vector<StudentInfo> studentData;
-        std::vector<std::string> headers;
-        size_t featuresStartIndex;
-        Utils::loadDataFile("dataset_train.csv", studentData, headers, featuresStartIndex);
+        std::vector<StudentInfo> students;
+#ifndef _MSC_VER
 
-        // Collecter les valeurs de caractéristiques pour chaque colonne
-        std::vector<std::vector<double>> featureValues(13);
-        for (int i = 0; i < 13; i++) {
-            for (const auto& student : studentData) {
-                featureValues[i].push_back(student.features[i]);
-            }
-        }
-
-        // Remplacer les valeurs NaN par la moyenne de la caractéristique respective
-        for (auto& student : studentData) {
-            for (size_t j = 0; j < student.features.size(); j++) {
-                if (std::isnan(student.features[j])) {
-                    student.features[j] = Calculate::Mean(featureValues[j]);
-                }
-            }
-        }
-
-        // Ajout des membres pour stocker les moyennes et les écarts types
-        std::vector<double> featureMeans; // Moyennes des caractéristiques
-        std::vector<double> featureStdDevs; // Écarts types des caractéristiques
-        normalizeData(studentData, featureMeans, featureStdDevs);
-
-        std::vector<size_t> featuresSelected = { 3, 4, 7 };
-        const size_t featuresCount = featuresSelected.size();
-        const size_t housesCount = 4;
-        std::vector<std::vector<double>> weights(housesCount, std::vector<double>(featuresCount, 0.0));
-        std::vector<std::vector<double>> inputs;
-        std::vector<std::vector<double>> labels;
-
-        std::unordered_map<size_t, std::string> housesIndex;
-        housesIndex[0] = "Slytherin";
-        housesIndex[1] = "Ravenclaw";
-        housesIndex[2] = "Gryffindor";
-        housesIndex[3] = "Hufflepuff";
-
-        for (auto i = 0; i < studentData.size(); i++)
+        if (argc != 2)
         {
-            std::vector<double> selection;
-            for (auto feature : featuresSelected)
-            {
-                selection.push_back(studentData[i].features[feature - 1]);
-            }
-
-            inputs.push_back(selection);
-
-            if (studentData[i].labels[0] == housesIndex[0])
-            {
-                labels.push_back({ 1.0, 0.0, 0.0, 0.0 });
-            }
-            else if (studentData[i].labels[0] == housesIndex[1])
-            {
-                labels.push_back({ 0.0, 1.0, 0.0, 0.0 });
-            }
-            else if (studentData[i].labels[0] == housesIndex[2])
-            {
-                labels.push_back({ 0.0, 0.0, 1.0, 0.0 });
-            }
-            else if (studentData[i].labels[0] == housesIndex[3])
-            {
-                labels.push_back({ 0.0, 0.0, 0.0, 1.0 });
-            }
+            std::cerr << "Usage: " << argv[0] << " <dataset>.csv" << std::endl;
+            return 1;
         }
+        auto [headers, featuresStartIndex] = Utils::LoadDataFile(argv[1], students);
+#else       
+        auto [headers, featuresStartIndex] = Utils::LoadDataFile("dataset_train.csv", students);
+#endif // MVS
 
-        training(weights, inputs, labels);
+        // Handle missing values
+        handleMissingValues(students);
 
-        std::cout << "Accuracy : " << calculateAccuracy(inputs, labels, weights) << "%" << std::endl;
+        // Normalize training data
+        std::vector<double> featureMeans, featureStdDevs;
+        Utils::NormalizeData(students, featureMeans, featureStdDevs);
 
-        saveWeightsAndNormalizationParameters(weights, featureMeans, featureStdDevs, "weights.save");
+        // Set up data for training
+        std::vector<size_t> selectedFeatures = { 3, 4, 7 };
+        std::unordered_map<size_t, std::string> houseIndex = {
+            {0, "Slytherin"},
+            {1, "Ravenclaw"},
+            {2, "Gryffindor"},
+            {3, "Hufflepuff"}
+        };
 
+        std::vector<std::vector<double>> weights(houseIndex.size(), std::vector<double>(selectedFeatures.size(), 0.0));
+        std::vector<std::vector<double>> trainingInputs;
+        std::vector<std::vector<double>> trainingLabels;
+
+        setupTrainingData(students, selectedFeatures, houseIndex, weights, trainingInputs, trainingLabels);
+
+        // Train the model
+        trainModels(weights, trainingInputs, trainingLabels, 100);
+
+        // Save weights and normalization parameters
+        Utils::SaveWeightsAndNormalizationParameters(weights, featureMeans, featureStdDevs, "models.save");
     }
     catch (const std::exception& e) {
-        // Handle exceptions and display error messages
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }

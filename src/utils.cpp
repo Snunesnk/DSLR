@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "calculate.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -135,7 +136,11 @@ void loadDataLines(std::ifstream& file, std::vector<StudentInfo>& students, size
 }
 
 // Function to load data from a file, including headers, features start index, and student information.
-void Utils::loadDataFile(const std::string& filename, std::vector<StudentInfo>& students, std::vector<std::string>& headers, size_t& featuresStartIndex) {
+std::pair<std::vector<std::string>, size_t> Utils::LoadDataFile(const std::string& filename, std::vector<StudentInfo>& students)
+{
+    std::vector<std::string> headers;
+    size_t featuresStartIndex;
+
     std::ifstream file(filename);
     if (!file.is_open()) {
         throw std::runtime_error("Error: Opening file.");
@@ -155,6 +160,8 @@ void Utils::loadDataFile(const std::string& filename, std::vector<StudentInfo>& 
     loadDataLines(file, students, headers.size(), featuresStartIndex);
 
     file.close();
+
+    return { headers, featuresStartIndex };
 }
 
 // Function to execute a system command and print an error message if the execution fails.
@@ -176,4 +183,126 @@ void Utils::printFeatureHeader(const size_t max) {
     }
 
     std::cout << std::endl;
+}
+
+void Utils::NormalizeData(std::vector<StudentInfo>& data, std::vector<double>& featureMeans, std::vector<double>& featureStdDevs) {
+    // Calculer la moyenne et l'écart type des caractéristiques des données
+    size_t numFeatures = data[0].features.size();
+
+    if (featureMeans.size() + featureStdDevs.size() == 0) {
+        for (size_t i = 0; i < numFeatures; ++i) {
+            // Extraction des valeurs de la caractéristique i
+            std::vector<double> featureValues;
+            for (const StudentInfo& entry : data) {
+                featureValues.push_back(entry.features[i]);
+            }
+
+            // Calcul de la moyenne et de l'écart type en utilisant vos fonctions
+            double mean = Calculate::Mean(featureValues);
+            double stdDev = Calculate::StandardDeviation(featureValues);
+
+            featureMeans.push_back(mean);
+            featureStdDevs.push_back(stdDev);
+        }
+    }
+
+    // Normalise les données
+    for (StudentInfo& entry : data) {
+        size_t numFeatures = entry.features.size();
+        for (size_t i = 0; i < numFeatures; ++i) {
+            if (featureStdDevs[i] != 0.0) {
+                entry.features[i] = (entry.features[i] - featureMeans[i]) / featureStdDevs[i];
+            }
+            else {
+                std::cerr << "Warning: Feature " << i << " has a zero standard deviation. Normalization ignored.\n";
+            }
+        }
+    }
+}
+
+void Utils::SaveWeightsAndNormalizationParameters(const std::vector<std::vector<double>>& weights,
+    const std::vector<double>& featureMeans,
+    const std::vector<double>& featureStdDevs,
+    const std::string& filename) {
+    // Ouvrir le fichier en mode écriture
+    std::ofstream outFile(filename);
+
+    if (!outFile.is_open()) {
+        std::cerr << "Error: Unable to open the file " << filename << " for writing." << std::endl;
+        return;
+    }
+
+    // Enregistrer les caractéristiques (moyennes et écarts types)
+    outFile << "FeatureMeans:";
+    for (double mean : featureMeans) {
+        outFile << " " << mean;
+    }
+    outFile << "\n";
+
+    outFile << "FeatureStandardDeviations:";
+    for (double stdDev : featureStdDevs) {
+        outFile << " " << stdDev;
+    }
+    outFile << "\n\n";
+
+    // Enregistrer les poids
+    for (const auto& houseWeights : weights) {
+        for (double weight : houseWeights) {
+            outFile << weight << " ";
+        }
+        outFile << "\n";
+    }
+
+    // Fermer le fichier
+    outFile.close();
+}
+
+void Utils::LoadWeightsAndNormalizationParameters(std::vector<std::vector<double>>& weights,
+    std::vector<double>& featureMeans,
+    std::vector<double>& featureStdDevs,
+    const std::string& filename) {
+    // Ouvrir le fichier en mode lecture
+    std::ifstream inFile(filename);
+
+    if (!inFile.is_open()) {
+        std::cerr << "Error: Unable to open the file " << filename << " for reading." << std::endl;
+        return;
+    }
+
+    std::string line;
+    // Lire les moyennes des caractéristiques
+    std::getline(inFile, line);
+    std::istringstream meanStream(line);
+    std::string meanLabel;
+    meanStream >> meanLabel; // Ignorer le label "Feature Means:"
+    double meanValue;
+    while (meanStream >> meanValue) {
+        featureMeans.push_back(meanValue);
+    }
+
+    // Lire les écarts types des caractéristiques
+    std::getline(inFile, line);
+    std::istringstream stdDevStream(line);
+    std::string stdDevLabel;
+    stdDevStream >> stdDevLabel; // Ignorer le label "Feature Standard Deviations:"
+    double stdDevValue;
+    while (stdDevStream >> stdDevValue) {
+        featureStdDevs.push_back(stdDevValue);
+    }
+
+    // Lire les poids
+    weights.clear(); // Assurez-vous de vider le vecteur avant de le remplir
+    std::getline(inFile, line);
+    while (std::getline(inFile, line)) {
+        std::istringstream weightStream(line);
+        double weight;
+        std::vector<double> houseWeights;
+        while (weightStream >> weight) {
+            houseWeights.push_back(weight);
+        }
+        weights.push_back(houseWeights);
+    }
+
+    // Fermer le fichier
+    inFile.close();
 }

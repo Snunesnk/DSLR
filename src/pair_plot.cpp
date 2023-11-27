@@ -2,37 +2,25 @@
 #include "utils.h"
 #include "calculate.h"
 
-// Function declaration
 void extensionScatterPlotMatrix(const std::vector<StudentInfo>& studentData, const size_t featuresCount);
 
 int main(int argc, char* argv[])
 {
     try {
-        // Check command line arguments
+        std::vector<StudentInfo> students;
 #ifndef _MSC_VER
+
         if (argc != 2)
         {
             std::cerr << "Usage: " << argv[0] << " <dataset>.csv" << std::endl;
             return 1;
         }
-
-        // Load data from the provided dataset
-        std::vector<StudentInfo> studentData;
-        std::vector<std::string> headers;
-        size_t featuresStartIndex;
-        Utils::loadDataFile(argv[1], studentData, headers, featuresStartIndex);
-        size_t featuresCount = headers.size() - featuresStartIndex;
-#else
-        // If using Microsoft Visual Studio, use a default dataset
-        std::vector<StudentInfo> studentData;
-        std::vector<std::string> headers;
-        size_t featuresStartIndex;
-        Utils::loadDataFile("dataset_train.csv", studentData, headers, featuresStartIndex);
-        size_t featuresCount = headers.size() - featuresStartIndex;
-#endif
-
+        Utils::LoadDataFile(argv[1], students);
+#else       
+        Utils::LoadDataFile("dataset_train.csv", students);
+#endif // MVS
         // Call the function to generate scatter plot matrix
-        extensionScatterPlotMatrix(studentData, featuresCount);
+        extensionScatterPlotMatrix(students, students[0].features.size());
     }
     catch (const std::exception& e) {
         // Handle exceptions
