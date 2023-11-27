@@ -20,7 +20,7 @@ void extensionScatterPlot(const std::vector<StudentInfo>& studentData, const siz
 
         // Retrieve feature values for each student
         std::vector<std::vector<double>> featuresValues(featuresCount);
-        for (int i = 0; i < featuresCount; ++i)
+        for (size_t i = 0; i < featuresCount; ++i)
         {
             for (const auto& student : studentData)
             {
@@ -30,7 +30,7 @@ void extensionScatterPlot(const std::vector<StudentInfo>& studentData, const siz
 
         // Print feature headers and compute correlations
         Utils::printFeatureHeader(featuresCount);
-        for (int i = 0; i < featuresCount; ++i)
+        for (size_t i = 0; i < featuresCount; ++i)
         {
             Utils::computeAndPrintFeatures("Feature " + std::to_string(i + 1), std::bind(Calculate::PearsonCorrelation, std::placeholders::_1, featuresValues[i]), featuresValues);
         }

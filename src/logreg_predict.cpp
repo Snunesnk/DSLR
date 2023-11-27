@@ -47,7 +47,6 @@ void createInputVectors(const std::vector<StudentInfo>& students,
 // Function to perform predictions and write results to a CSV file
 void performPredictions(const std::vector<StudentInfo>& students,
     const std::vector<std::vector<double>>& weights,
-    const std::vector<size_t>& featuresSelected,
     const std::vector<std::string>& headers,
     const std::vector<std::vector<double>>& inputs)
 {
@@ -118,7 +117,7 @@ int main(int argc, char* argv[]) {
         createInputVectors(students, featuresSelected, inputs);
 
         // Perform predictions and write results
-        performPredictions(students, weights, featuresSelected, headers, inputs);
+        performPredictions(students, weights, headers, inputs);
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;

@@ -4,7 +4,7 @@
 CXX = g++
 
 # Options de compilation
-CXXFLAGS = -std=c++20 -Iinc
+CXXFLAGS = -std=c++20 -Iinc -Wall -Wextra
 
 # Liste des programmes à générer
 PROGRAMS = describe histogram scatter_plot pair_plot logreg_train logreg_predict
@@ -21,7 +21,7 @@ all: $(PROGRAMS)
 
 # Nettoyage des fichiers objets et exécutables
 clean:
-	rm -f $(PROGRAMS:%=%.*) 
+	rm -rf $(PROGRAMS:%=%.*) 
 
 # Règle pour nettoyer et reconstruire
 re: clean all

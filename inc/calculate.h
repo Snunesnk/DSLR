@@ -1,8 +1,8 @@
 #ifndef CALCULATE_H
 #define CALCULATE_H
-#pragma warning(push, 0)
+
 #include <vector>
-#pragma warning(pop)
+
 class Calculate {
 public:
 	// Calculate and return the mean of a dataset
