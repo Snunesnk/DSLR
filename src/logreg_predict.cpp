@@ -83,7 +83,7 @@ void performPredictions(const std::vector<StudentInfo>& students,
     outputFile.close();
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     try {
         std::vector<StudentInfo> students;
 #ifndef _MSC_VER

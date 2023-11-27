@@ -152,7 +152,7 @@ void setupTrainingData(const std::vector<StudentInfo>& students,
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     try {
         std::vector<StudentInfo> students;
 #ifndef _MSC_VER
